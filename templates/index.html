@@ -29,7 +29,7 @@
                     <input type="text" name="city" placeholder="Введите город..." class="city-input" required>
                     <button type="submit" class="btn btn-search">Показать</button>
                 </form>
-                <button class="btn btn-geo" onclick="getLocation()">Определить мой город</button>
+                <button class="btn btn-geo" onclick="getLocation()">Использовать геолокацию</button>
                 <a href="/" class="btn btn-refresh">Обновить</a>
             </div>
 
@@ -66,13 +66,13 @@
                 </div>
             </div>
 
-            <!-- Прогноз -->
+            <!-- Прогноз на 5 дней -->
             <div class="forecast-card">
                 <h2>Прогноз на 5 дней</h2>
                 <div class="forecast-grid">
-                    {% for time, temp, feels, icon in forecast %}
+                    {% for date, temp, feels, icon in forecast %}
                         <div class="forecast-item">
-                            <p class="time">{{ time }}</p>
+                            <p class="date">{{ date }}</p>
                             <div class="weather-icon">
                                 <i class="{{ 'wi wi-day-sunny' if '01d' in icon else 'wi wi-night-clear' if '01n' in icon else 'wi wi-day-cloudy' if '02d' in icon else 'wi wi-night-alt-cloudy' if '02n' in icon else 'wi wi-day-cloudy' if '03d' in icon or '04d' in icon else 'wi wi-night-alt-cloudy' if '03n' in icon or '04n' in icon else 'wi wi-rain' if '09d' in icon or '10d' in icon else 'wi wi-night-alt-rain' if '09n' in icon or '10n' in icon else 'wi wi-thunderstorm' if '11d' in icon or '11n' in icon else 'wi wi-snow' if '13d' in icon or '13n' in icon else 'wi wi-fog' if '50d' in icon or '50n' in icon else 'wi wi-day-sunny' }}"></i>
                             </div>
