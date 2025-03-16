@@ -93,45 +93,47 @@
 
     <script>
         function getLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lon = position.coords.longitude;
-                        console.log("Геолокация успешна: lat =", lat, "lon =", lon);
-                        window.location.href = `/?lat=${lat}&lon=${lon}`;
-                    },
-                    (error) => {
-                        let errorMessage;
-                        switch (error.code) {
-                            case error.PERMISSION_DENIED:
-                                errorMessage = "Геолокация отклонена пользователем. Используйте ввод города.";
-                                break;
-                            case error.POSITION_UNAVAILABLE:
-                                errorMessage = "Местоположение недоступно. Проверьте настройки устройства.";
-                                break;
-                            case error.TIMEOUT:
-                                errorMessage = "Время ожидания геолокации истекло. Попробуйте снова.";
-                                break;
-                            default:
-                                errorMessage = "Произошла неизвестная ошибка геолокации.";
-                                break;
-                        }
-                        alert(errorMessage);
-                        console.error("Ошибка геолокации:", error);
-                        window.location.href = "/";
-                    },
-                    {
-                        timeout: 10000,
-                        maximumAge: 0,
-                        enableHighAccuracy: true
-                    }
-                );
-            } else {
-                alert("Геолокация не поддерживается вашим браузером.");
+            if (!navigator.geolocation) {
+                alert("Геолокация не поддерживается вашим браузером. Используйте ввод города.");
                 console.error("Геолокация не поддерживается браузером");
-                window.location.href = "/";
+                return;
             }
+
+            const options = {
+                timeout: 10000,
+                maximumAge: 0,
+                enableHighAccuracy: true
+            };
+
+            const successCallback = (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                console.log("Геолокация успешна: lat =", lat, "lon =", lon);
+                window.location.href = `/?lat=${lat}&lon=${lon}`;
+            };
+
+            const errorCallback = (error) => {
+                console.log("Геолокация ошибка:", error.code, error.message);
+                let errorMessage;
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = "Геолокация отклонена пользователем. Используйте ввод города.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = "Местоположение недоступно. Проверьте настройки устройства.";
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = "Время ожидания геолокации истекло. Попробуйте снова.";
+                        break;
+                    default:
+                        errorMessage = "Произошла неизвестная ошибка геолокации.";
+                        break;
+                }
+                console.error("Ошибка геолокации:", error);
+                alert(errorMessage);
+            };
+
+            navigator.geolocation.getCurrentPosition(successCallback, errorCallback, options);
         }
 
         // Обработчик формы

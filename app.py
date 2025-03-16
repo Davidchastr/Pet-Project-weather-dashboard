@@ -3,6 +3,7 @@ from flask import Flask, render_template, request
 import matplotlib.pyplot as plt
 import os
 from datetime import datetime
+import pytz
 
 app = Flask(__name__)
 
@@ -61,7 +62,8 @@ def get_air_quality(lat, lon):
         print(f"Статус запроса качества воздуха: {response.status_code}")
         if response.status_code == 200:
             data = response.json()
-            aqi = data['list'][0]['main']['aqi']  # Индекс качества воздуха (1-5)
+            aqi = data['list'][0]['main']['aqi']
+            print(f"Полученный AQI: {aqi}")
             return aqi
         else:
             print(f"Ошибка OpenWeatherMap (качество воздуха): {response.text}")
@@ -72,8 +74,9 @@ def get_air_quality(lat, lon):
 
 def generate_temperature_graph(forecast_data):
     daily_temps = {}
+    tz = pytz.timezone('Europe/Moscow')
     for entry in forecast_data['list'][:40]:
-        date = datetime.fromtimestamp(entry['dt']).date()
+        date = datetime.fromtimestamp(entry['dt'], tz).date()
         temp = entry['main']['temp']
         if date in daily_temps:
             daily_temps[date].append(temp)
@@ -137,8 +140,10 @@ def index():
     wind_speed = current_weather['wind']['speed']
     description = current_weather['weather'][0]['description'].capitalize()
     icon = current_weather['weather'][0]['icon']
-    sunrise = datetime.fromtimestamp(current_weather['sys']['sunrise']).strftime('%H:%M')
-    sunset = datetime.fromtimestamp(current_weather['sys']['sunset']).strftime('%H:%M')
+    # Учитываем часовой пояс UTC+5 для Стерлитамака
+    tz = pytz.timezone('Europe/Moscow')  # Стерлитамак использует UTC+5
+    sunrise = datetime.fromtimestamp(current_weather['sys']['sunrise'], tz).strftime('%H:%M')
+    sunset = datetime.fromtimestamp(current_weather['sys']['sunset'], tz).strftime('%H:%M')
     pressure = current_weather['main']['pressure']
     lat = current_weather['coord']['lat']
     lon = current_weather['coord']['lon']
@@ -146,21 +151,31 @@ def index():
 
     # Обработка прогноза на 5 дней
     daily_forecast = {}
-    for entry in forecast['list'][:40]:  # Берем первые 40 записей (5 дней по 8 интервалов)
-        date = datetime.fromtimestamp(entry['dt']).date()
+    for entry in forecast['list'][:40]:
+        date = datetime.fromtimestamp(entry['dt'], tz).date()
         if date not in daily_forecast:
             daily_forecast[date] = {'temps': [], 'feels': [], 'icons': []}
         daily_forecast[date]['temps'].append(entry['main']['temp'])
         daily_forecast[date]['feels'].append(entry['main']['feels_like'])
         daily_forecast[date]['icons'].append(entry['weather'][0]['icon'])
 
-    # Формируем данные для шаблона
+    # Локализация месяцев на русский
+    MONTHS_RU = {
+        'January': 'января', 'February': 'февраля', 'March': 'марта', 'April': 'апреля',
+        'May': 'мая', 'June': 'июня', 'July': 'июля', 'August': 'августа',
+        'September': 'сентября', 'October': 'октября', 'November': 'ноября', 'December': 'декабря'
+    }
+
     forecast_data = []
-    for date, data in list(daily_forecast.items())[:5]:  # Берем только 5 дней
+    for date, data in list(daily_forecast.items())[:5]:
         avg_temp = sum(data['temps']) / len(data['temps'])
         avg_feels = sum(data['feels']) / len(data['feels'])
-        dominant_icon = max(data['icons'], key=data['icons'].count)  # Наиболее частая иконка
-        forecast_data.append((date.strftime('%Y-%m-%d'), round(avg_temp, 1), round(avg_feels, 1), dominant_icon))
+        dominant_icon = max(data['icons'], key=data['icons'].count)
+        # Формат: "16 марта"
+        day = date.strftime('%d')
+        month = date.strftime('%B')
+        formatted_date = f"{int(day)} {MONTHS_RU[month]}"
+        forecast_data.append((formatted_date, round(avg_temp, 1), round(avg_feels, 1), dominant_icon))
 
     generate_temperature_graph(forecast)
 
@@ -179,5 +194,5 @@ def index():
                            forecast=forecast_data)
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))  # Render использует PORT, по умолчанию 5000 для локального теста
+    port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=True)
