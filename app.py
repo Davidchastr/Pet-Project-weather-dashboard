@@ -137,22 +137,30 @@ def index():
     wind_speed = current_weather['wind']['speed']
     description = current_weather['weather'][0]['description'].capitalize()
     icon = current_weather['weather'][0]['icon']
-    # Новые данные
     sunrise = datetime.fromtimestamp(current_weather['sys']['sunrise']).strftime('%H:%M')
     sunset = datetime.fromtimestamp(current_weather['sys']['sunset']).strftime('%H:%M')
     pressure = current_weather['main']['pressure']
-    # Получаем координаты для запроса качества воздуха
     lat = current_weather['coord']['lat']
     lon = current_weather['coord']['lon']
     aqi = get_air_quality(lat, lon)
 
+    # Обработка прогноза на 5 дней
+    daily_forecast = {}
+    for entry in forecast['list'][:40]:  # Берем первые 40 записей (5 дней по 8 интервалов)
+        date = datetime.fromtimestamp(entry['dt']).date()
+        if date not in daily_forecast:
+            daily_forecast[date] = {'temps': [], 'feels': [], 'icons': []}
+        daily_forecast[date]['temps'].append(entry['main']['temp'])
+        daily_forecast[date]['feels'].append(entry['main']['feels_like'])
+        daily_forecast[date]['icons'].append(entry['weather'][0]['icon'])
+
+    # Формируем данные для шаблона
     forecast_data = []
-    for entry in forecast['list'][:5]:
-        time = datetime.fromtimestamp(entry['dt']).strftime('%Y-%m-%d %H:%M')
-        temp = entry['main']['temp']
-        feels = entry['main']['feels_like']
-        icon = entry['weather'][0]['icon']
-        forecast_data.append((time, temp, feels, icon))
+    for date, data in list(daily_forecast.items())[:5]:  # Берем только 5 дней
+        avg_temp = sum(data['temps']) / len(data['temps'])
+        avg_feels = sum(data['feels']) / len(data['feels'])
+        dominant_icon = max(data['icons'], key=data['icons'].count)  # Наиболее частая иконка
+        forecast_data.append((date.strftime('%Y-%m-%d'), round(avg_temp, 1), round(avg_feels, 1), dominant_icon))
 
     generate_temperature_graph(forecast)
 
