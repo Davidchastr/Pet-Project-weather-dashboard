@@ -16,75 +16,80 @@
                 <p>{{ error }}</p>
             </div>
         {% else %}
-        <h1>Погода в {{ city }}</h1>
+            <h1>Погода в {{ city }}</h1>
 
-        <!-- Управление (форма и кнопки) -->
-        <div class="controls">
-            <form method="POST" class="city-form" id="city-form">
-                <input type="text" name="city" placeholder="Введите город..." class="city-input" required>
-                <button type="submit" class="btn btn-search">Показать</button>
-            </form>
-            <button class="btn btn-geo" onclick="getLocation()">Использовать геолокацию</button>
-            <a href="/" class="btn btn-refresh">Обновить</a>
-        </div>
+            <!-- Управление (форма и кнопки) -->
+            <div class="controls">
+                <form method="POST" class="city-form" id="city-form">
+                    <input type="text" name="city" placeholder="Введите город..." class="city-input" required>
+                    <button type="submit" class="btn btn-search">Показать</button>
+                </form>
+                <button class="btn btn-geo" onclick="getLocation()">Использовать геолокацию</button>
+                <a href="/" class="btn btn-refresh">Обновить</a>
+            </div>
 
-        <!-- Контейнер для карточек -->
-        <div class="weather-container">
-            <!-- Текущая погода -->
-            <div class="weather-card">
-                <h2>Текущая погода</h2>
-                <div class="weather-details">
-                    <div class="weather-icon">
-                        <i class="{{ 'wi wi-day-sunny' if '01d' in icon else 'wi wi-night-clear' if '01n' in icon else 'wi wi-day-cloudy' if '02d' in icon else 'wi wi-night-alt-cloudy' if '02n' in icon else 'wi wi-day-cloudy' if '03d' in icon or '04d' in icon else 'wi wi-night-alt-cloudy' if '03n' in icon or '04n' in icon else 'wi wi-rain' if '09d' in icon or '10d' in icon else 'wi wi-night-alt-rain' if '09n' in icon or '10n' in icon else 'wi wi-thunderstorm' if '11d' in icon or '11n' in icon else 'wi wi-snow' if '13d' in icon or '13n' in icon else 'wi wi-fog' if '50d' in icon or '50n' in icon else 'wi wi-day-sunny' }}"></i>
+            <!-- Контейнер для карточек -->
+            <div class="weather-container">
+                <!-- Текущая погода -->
+                <div class="weather-card">
+                    <h2>Текущая погода</h2>
+                    <div class="weather-details">
+                        <div class="weather-icon">
+                            <i class="{{ 'wi wi-day-sunny' if '01d' in icon else 'wi wi-night-clear' if '01n' in icon else 'wi wi-day-cloudy' if '02d' in icon else 'wi wi-night-alt-cloudy' if '02n' in icon else 'wi wi-day-cloudy' if '03d' in icon or '04d' in icon else 'wi wi-night-alt-cloudy' if '03n' in icon or '04n' in icon else 'wi wi-rain' if '09d' in icon or '10d' in icon else 'wi wi-night-alt-rain' if '09n' in icon or '10n' in icon else 'wi wi-thunderstorm' if '11d' in icon or '11n' in icon else 'wi wi-snow' if '13d' in icon or '13n' in icon else 'wi wi-fog' if '50d' in icon or '50n' in icon else 'wi wi-day-sunny' }}"></i>
+                        </div>
+                        <div class="weather-info">
+                            <p class="description">{{ description }}</p>
+                            <p class="temperature">{{ current_temp }}°C</p>
+                            <p class="feels-like">Ощущается как: {{ feels_like }}°C</p>
+                            <p class="humidity">Влажность: {{ humidity }}%</p>
+                            <p class="wind">Ветер: {{ wind_speed }} м/с</p>
+                        </div>
                     </div>
-                    <div class="weather-info">
-                        <p class="description">{{ description }}</p>
-                        <p class="temperature">{{ current_temp }}°C</p>
-                        <p class="feels-like">Ощущается как: {{ feels_like }}°C</p>
-                        <p class="humidity">Влажность: {{ humidity }}%</p>
-                        <p class="wind">Ветер: {{ wind_speed }} м/с</p>
+                </div>
+
+                <!-- Дополнительная информация -->
+                <div class="extra-info-card">
+                    <h2>Дополнительно</h2>
+                    <div class="extra-info">
+                        <p><i class="wi wi-sunrise"></i> Восход: {{ sunrise }}</p>
+                        <p><i class="wi wi-sunset"></i> Закат: {{ sunset }}</p>
+                        <p><i class="wi wi-barometer"></i> Давление: {{ pressure }} гПа</p>
+                        {% if aqi %}
+                            <p><i class="wi wi-smoke"></i> Качество воздуха (AQI): {{ aqi }}</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
 
-            <!-- Дополнительная информация -->
-            <div class="extra-info-card">
-                <h2>Дополнительно</h2>
-                <div class="extra-info">
-                    <p><i class="wi wi-sunrise"></i> Восход: {{ sunrise }}</p>
-                    <p><i class="wi wi-sunset"></i> Закат: {{ sunset }}</p>
-                    <p><i class="wi wi-barometer"></i> Давление: {{ pressure }} гПа</p>
-                    {% if aqi %}
-                    <p><i class="wi wi-smoke"></i> Качество воздуха (AQI): {{ aqi }}</p>
-                    {% endif %}
+            <!-- Прогноз -->
+            <div class="forecast-card">
+                <h2>Прогноз на 5 дней</h2>
+                <div class="forecast-grid">
+                    {% for time, temp, feels, icon in forecast %}
+                        <div class="forecast-item">
+                            <p class="time">{{ time }}</p>
+                            <div class="weather-icon">
+                                <i class="{{ 'wi wi-day-sunny' if '01d' in icon else 'wi wi-night-clear' if '01n' in icon else 'wi wi-day-cloudy' if '02d' in icon else 'wi wi-night-alt-cloudy' if '02n' in icon else 'wi wi-day-cloudy' if '03d' in icon or '04d' in icon else 'wi wi-night-alt-cloudy' if '03n' in icon or '04n' in icon else 'wi wi-rain' if '09d' in icon or '10d' in icon else 'wi wi-night-alt-rain' if '09n' in icon or '10n' in icon else 'wi wi-thunderstorm' if '11d' in icon or '11n' in icon else 'wi wi-snow' if '13d' in icon or '13n' in icon else 'wi wi-fog' if '50d' in icon or '50n' in icon else 'wi wi-day-sunny' }}"></i>
+                            </div>
+                            <p class="temperature">{{ temp }}°C</p>
+                            <p class="feels-like">Ощущается: {{ feels }}°C</p>
+                        </div>
+                    {% endfor %}
                 </div>
             </div>
-        </div>
 
-        <!-- Прогноз -->
-        <div class="forecast-card">
-            <h2>Прогноз на 5 дней</h2>
-            <div class="forecast-grid">
-                {% for time, temp, feels, icon in forecast %}
-                <div class="forecast-item">
-                    <p class="time">{{ time }}</p>
-                    <div class="weather-icon">
-                        <i class="{{ 'wi wi-day-sunny' if '01d' in icon else 'wi wi-night-clear' if '01n' in icon else 'wi wi-day-cloudy' if '02d' in icon else 'wi wi-night-alt-cloudy' if '02n' in icon else 'wi wi-day-cloudy' if '03d' in icon or '04d' in icon else 'wi wi-night-alt-cloudy' if '03n' in icon or '04n' in icon else 'wi wi-rain' if '09d' in icon or '10d' in icon else 'wi wi-night-alt-rain' if '09n' in icon or '10n' in icon else 'wi wi-thunderstorm' if '11d' in icon or '11n' in icon else 'wi wi-snow' if '13d' in icon or '13n' in icon else 'wi wi-fog' if '50d' in icon or '50n' in icon else 'wi wi-day-sunny' }}"></i>
-                    </div>
-                    <p class="temperature">{{ temp }}°C</p>
-                    <p class="feels-like">Ощущается: {{ feels }}°C</p>
-                </div>
-                {% endfor %}
+            <!-- График -->
+            <div class="graph-card">
+                <h2>График температуры</h2>
+                <img src="{{ url_for('static', filename='temp_graph.png') }}" alt="График температуры">
             </div>
-        </div>
-
-        <!-- График -->
-        <div class="graph-card">
-            <h2>График температуры</h2>
-            <img src="{{ url_for('static', filename='temp_graph.png') }}" alt="График температуры">
-        </div>
         {% endif %}
     </div>
+
+    <!-- Футер с деловой надписью -->
+    <footer>
+        <p>Данный проект разработан в рамках тестировочной практики. Автор: Давид Чакветадзе.</p>
+    </footer>
 
     <script>
         function getLocation() {

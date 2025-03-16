@@ -173,3 +173,13 @@ h1 {
     margin-bottom: 20px;
     font-weight: 600;
 }
+footer {
+    text-align: center;
+    padding: 15px 0;
+    margin-top: 30px;
+    color: #34495e;
+    font-size: 14px;
+    font-family: 'Montserrat', sans-serif;
+    border-top: 1px solid #e0e0e0;
+    background-color: #f8f9fa;
+}
