@@ -11,6 +11,11 @@
 </head>
 <body>
     <div class="container">
+        <!-- Новый блок с надписью наверху -->
+        <div class="project-info">
+            <p>Данный проект разработан в рамках тестировочной практики. Автор: Давид Чакветадзе.</p>
+        </div>
+
         {% if error %}
             <div class="error-message">
                 <p>{{ error }}</p>
@@ -24,7 +29,7 @@
                     <input type="text" name="city" placeholder="Введите город..." class="city-input" required>
                     <button type="submit" class="btn btn-search">Показать</button>
                 </form>
-                <button class="btn btn-geo" onclick="getLocation()">Использовать геолокацию</button>
+                <button class="btn btn-geo" onclick="getLocation()">Определить мой город</button>
                 <a href="/" class="btn btn-refresh">Обновить</a>
             </div>
 
@@ -85,11 +90,6 @@
             </div>
         {% endif %}
     </div>
-
-    <!-- Футер с деловой надписью -->
-    <footer>
-        <p>Данный проект разработан в рамках тестировочной практики. Автор: Давид Чакветадзе.</p>
-    </footer>
 
     <script>
         function getLocation() {
