@@ -7,11 +7,12 @@ import os
 from datetime import datetime
 import pytz
 import time
+from timezonefinder import TimezoneFinder
 
 app = Flask(__name__)
 
 # API-ключи
-OPENWEATHER_API_KEY = "95f537e554a64a3600353cb8c3b3958e"
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY", "95f537e554a64a3600353cb8c3b3958e")
 BASE_URL = "http://api.openweathermap.org/data/2.5/"
 
 # Словарь месяцев на русском
@@ -30,7 +31,6 @@ MONTHS_RU = {
     'December': 'декабря'
 }
 
-# Маппинг кодов иконок OpenWeatherMap на классы weather-icons
 WEATHER_ICON_MAP = {
     "01d": "wi-day-sunny",
     "01n": "wi-night-clear",
@@ -52,7 +52,6 @@ WEATHER_ICON_MAP = {
     "50n": "wi-fog",
 }
 
-# Функция для преобразования направления ветра из градусов в текст
 def get_wind_direction(degrees):
     directions = ["Север", "Северо-восток", "Восток", "Юго-восток", "Юг", "Юго-запад", "Запад", "Северо-запад"]
     index = round(degrees / 45) % 8
@@ -62,13 +61,15 @@ def get_current_weather(lat=None, lon=None, city=None):
     if city:
         url = f"{BASE_URL}weather?q={city}&appid={OPENWEATHER_API_KEY}&units=metric&lang=ru"
     elif lat and lon:
+        # Баг 1: Не проверяем, что lat и lon могут быть None
         url = f"{BASE_URL}weather?lat={lat}&lon={lon}&appid={OPENWEATHER_API_KEY}&units=metric&lang=ru"
     else:
         return None
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         print(f"Запрос текущей погоды: {url}")
         print(f"Статус запроса текущей погоды: {response.status_code}")
+        # Баг 5: Нет обработки ошибки 429
         if response.status_code == 200:
             return response.json()
         else:
@@ -86,7 +87,7 @@ def get_forecast(lat=None, lon=None, city=None):
     else:
         return None
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         print(f"Запрос прогноза: {url}")
         print(f"Статус запроса прогноза: {response.status_code}")
         if response.status_code == 200:
@@ -99,7 +100,7 @@ def get_forecast(lat=None, lon=None, city=None):
 def get_air_quality(lat, lon):
     url = f"{BASE_URL}air_pollution?lat={lat}&lon={lon}&appid={OPENWEATHER_API_KEY}"
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         print(f"Запрос качества воздуха: {url}")
         print(f"Статус запроса качества воздуха: {response.status_code}")
         if response.status_code == 200:
@@ -115,6 +116,9 @@ def get_air_quality(lat, lon):
         return None
 
 def generate_temperature_graph(forecast_data):
+    if not forecast_data or 'list' not in forecast_data or not forecast_data['list']:
+        print("Ошибка: Нет данных для построения графика.")
+        return False
     daily_temps = {}
     tz = pytz.timezone('Europe/Moscow')
     for entry in forecast_data['list'][:40]:
@@ -128,11 +132,12 @@ def generate_temperature_graph(forecast_data):
     avg_temps = []
     for date, temps in daily_temps.items():
         dates.append(date)
-        avg_temps.append(sum(temps) / len(temps))
+        # Баг 2: Вместо средней температуры берем максимальную
+        avg_temps.append(max(temps))
 
-    # Увеличиваем размер графика для лучшего соответствия блоку
     plt.figure(figsize=(12, 5), facecolor='#f0f4f8')
-    plt.plot(dates, avg_temps, marker='o', linestyle='-', color='#1e90ff', label='Температура', linewidth=2)
+    # Баг 3: Ошибка в генерации графика — ничего не рисуем
+    # plt.plot(dates, avg_temps, marker='o', linestyle='-', color='#1e90ff', label='Температура', linewidth=2)
     plt.title('Прогноз температуры на 5 дней', fontsize=16, color='#2c3e50', pad=15)
     plt.xlabel('Дата', fontsize=12, color='#2c3e50')
     plt.ylabel('Температура (°C)', fontsize=12, color='#2c3e50')
@@ -144,9 +149,9 @@ def generate_temperature_graph(forecast_data):
     plt.tight_layout()
 
     graph_path = os.path.join('static', 'temp_graph.png')
-    print(f"Сохранение графика в: {graph_path}")
+    os.makedirs(os.path.dirname(graph_path), exist_ok=True)
     try:
-        plt.savefig(graph_path, bbox_inches='tight')
+        plt.savefig(graph_path, bbox_inches='tight', dpi=100)
         print(f"График успешно сохранен: {graph_path}")
         return True
     except Exception as e:
@@ -162,15 +167,15 @@ def index():
     lon = request.args.get('lon')
 
     if city:
+        city_name = city.capitalize()
         current_weather = get_current_weather(city=city)
         forecast = get_forecast(city=city)
-        city_name = city
     elif lat and lon:
         current_weather = get_current_weather(lat=lat, lon=lon)
         forecast = get_forecast(lat=lat, lon=lon)
         city_name = current_weather['name'] if current_weather else "Неизвестный город"
     else:
-        current_weather = get_current_weather(lat=53.6304, lon=55.9308)  # Стерлитамак по умолчанию
+        current_weather = get_current_weather(lat=53.6304, lon=55.9308)
         forecast = get_forecast(lat=53.6304, lon=55.9308)
         city_name = current_weather['name'] if current_weather else "Стерлитамак"
 
@@ -178,38 +183,42 @@ def index():
         print(f"Ошибка: Не удалось получить данные для города {city if city else 'по координатам'}")
         return render_template('index.html', error="Не удалось получить данные о погоде. Проверьте название города или подключение к интернету.")
 
-    current_temp = current_weather['main']['temp']
-    feels_like = current_weather['main']['feels_like']
-    humidity = current_weather['main']['humidity']
-    wind_speed = current_weather['wind']['speed']
-    wind_direction = get_wind_direction(current_weather['wind'].get('deg', 0))
-    visibility = current_weather.get('visibility', 0) / 1000
-    cloudiness = current_weather['clouds']['all']
-    description = current_weather['weather'][0]['description'].capitalize()
-    icon = current_weather['weather'][0]['icon']
+    current_temp = current_weather.get('main', {}).get('temp', 0)
+    feels_like = current_weather.get('main', {}).get('feels_like', 0)
+    humidity = current_weather.get('main', {}).get('humidity', 0)
+    wind_speed = current_weather.get('wind', {}).get('speed', 0)
+    wind_direction = get_wind_direction(current_weather.get('wind', {}).get('deg', 0))
+    visibility = current_weather.get('visibility', 0) / 1000 if current_weather.get('visibility') else 0
+    cloudiness = current_weather.get('clouds', {}).get('all', 0)
+    description = current_weather.get('weather', [{}])[0].get('description', 'Нет данных').capitalize()
+    icon = current_weather.get('weather', [{}])[0].get('icon', '04d')
     icon_class = WEATHER_ICON_MAP.get(icon, "wi-day-cloudy")
     tz = pytz.timezone('Europe/Moscow')
-    sunrise = datetime.fromtimestamp(current_weather['sys']['sunrise'], tz).strftime('%H:%M')
-    sunset = datetime.fromtimestamp(current_weather['sys']['sunset'], tz).strftime('%H:%M')
-    pressure = current_weather['main']['pressure']
-    lat = current_weather['coord']['lat']
-    lon = current_weather['coord']['lon']
+    sunrise = datetime.fromtimestamp(current_weather.get('sys', {}).get('sunrise', 0), tz).strftime('%H:%M')
+    sunset = datetime.fromtimestamp(current_weather.get('sys', {}).get('sunset', 0), tz).strftime('%H:%M')
+    pressure = current_weather.get('main', {}).get('pressure', 0)
+    lat = current_weather.get('coord', {}).get('lat', 53.6304)
+    lon = current_weather.get('coord', {}).get('lon', 55.9308)
     aqi = get_air_quality(lat, lon)
-    last_updated = datetime.fromtimestamp(current_weather['dt'], tz).strftime('%H:%M, %d %B %Y')
+    # Баг 4: Неправильный формат времени последнего обновления
+    last_updated = datetime.fromtimestamp(current_weather.get('dt', 0), tz).strftime('%Y-%m-%d')
 
     daily_forecast = {}
-    for entry in forecast['list'][:40]:
+    for entry in forecast.get('list', [])[:40]:
+        if not entry or 'dt' not in entry or 'main' not in entry:
+            continue
         date = datetime.fromtimestamp(entry['dt'], tz).date()
         if date not in daily_forecast:
             daily_forecast[date] = {'temps': [], 'feels': [], 'icons': []}
-        daily_forecast[date]['temps'].append(entry['main']['temp'])
-        daily_forecast[date]['feels'].append(entry['main']['feels_like'])
-        daily_forecast[date]['icons'].append(entry['weather'][0]['icon'])
+        daily_forecast[date]['temps'].append(entry['main'].get('temp', 0))
+        daily_forecast[date]['feels'].append(entry['main'].get('feels_like', 0))
+        daily_forecast[date]['icons'].append(entry.get('weather', [{}])[0].get('icon', '04d'))
 
     forecast_data = []
     for date, data in list(daily_forecast.items())[:5]:
-        avg_temp = sum(data['temps']) / len(data['temps'])
-        avg_feels = sum(data['feels']) / len(data['feels'])
+        # Баг 2: Используем max вместо среднего значения
+        avg_temp = max(data['temps']) if data['temps'] else 0
+        avg_feels = max(data['feels']) if data['feels'] else 0
         icon_counts = {}
         for icon_code in data['icons']:
             icon_counts[icon_code] = icon_counts.get(icon_code, 0) + 1

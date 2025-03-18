@@ -151,7 +151,7 @@ body {
 .extra-info-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px; /* Уменьшенный зазор */
+    gap: 8px;
     margin-top: 10px;
 }
 
@@ -160,11 +160,12 @@ body {
     align-items: center;
     gap: 5px;
     padding: 5px 8px;
-    background: #ffffff;
+    /* Баг 9: Неправильный фон и цвет текста */
+    background: #333333; /* Темный фон */
+    color: #333333; /* Темный текст, нечитаемый */
     border-radius: 8px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     font-size: 14px;
-    color: #34495e;
 }
 
 .extra-info-item .wi {
@@ -213,7 +214,7 @@ body {
 }
 
 .graph-image {
-    width: 100%; /* Растягиваем на всю ширину блока */
+    width: 100%;
     height: auto;
     border-radius: 10px;
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
@@ -305,12 +306,17 @@ body {
     }
 
     .extra-info-grid {
-        grid-template-columns: 1fr; /* На планшетах одна колонка */
+        grid-template-columns: 1fr;
     }
 
     .graph-image {
         width: 100%;
     }
+
+    /* Баг 8: Удаляем адаптивность для прогноза */
+    /* .forecast-grid {
+        grid-template-columns: 1fr;
+    } */
 }
 
 @media (max-width: 480px) {
@@ -320,10 +326,6 @@ body {
 
     .weather-info .temperature {
         font-size: 28px;
-    }
-
-    .forecast-grid {
-        grid-template-columns: 1fr;
     }
 
     .weather-card, .extra-info-card {

@@ -29,7 +29,8 @@
                     <button type="submit" class="btn btn-search">Показать</button>
                 </form>
                 <button class="btn btn-geo" onclick="getLocation()">Использовать геолокацию</button>
-                <button class="btn btn-refresh" onclick="refreshPage()">Обновить</button>
+                <!-- Баг 6: Неправильный вызов функции refreshPage -->
+                <button class="btn btn-refresh" onclick="refresh()">Обновить</button>
             </div>
 
             <div class="weather-container">
@@ -37,7 +38,8 @@
                     <h2 class="card-title">Текущая погода</h2>
                     <div class="weather-details">
                         <div class="weather-icon">
-                            <i class="wi {{ icon_class }}"></i>
+                            <!-- Баг 7: Иконка не отображается из-за неправильного использования -->
+                            <i class="wi-{{ icon_class }}"></i>
                         </div>
                         <div class="weather-info">
                             <p class="description">{{ description }}</p>
