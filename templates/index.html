@@ -11,7 +11,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- Новый блок с надписью наверху -->
         <div class="project-info">
             <p>Данный проект разработан в рамках тестировочной практики. Автор: Давид Чакветадзе.</p>
         </div>
@@ -19,28 +18,26 @@
         {% if error %}
             <div class="error-message">
                 <p>{{ error }}</p>
+                <a href="/" class="btn btn-home">На главную</a>
             </div>
         {% else %}
-            <h1>Погода в {{ city }}</h1>
+            <h1 class="weather-title">Погода в {{ city }}</h1>
 
-            <!-- Управление (форма и кнопки) -->
             <div class="controls">
                 <form method="POST" class="city-form" id="city-form">
                     <input type="text" name="city" placeholder="Введите город..." class="city-input" required>
                     <button type="submit" class="btn btn-search">Показать</button>
                 </form>
                 <button class="btn btn-geo" onclick="getLocation()">Использовать геолокацию</button>
-                <a href="/" class="btn btn-refresh">Обновить</a>
+                <button class="btn btn-refresh" onclick="refreshPage()">Обновить</button>
             </div>
 
-            <!-- Контейнер для карточек -->
             <div class="weather-container">
-                <!-- Текущая погода -->
                 <div class="weather-card">
-                    <h2>Текущая погода</h2>
+                    <h2 class="card-title">Текущая погода</h2>
                     <div class="weather-details">
                         <div class="weather-icon">
-                            <i class="{{ 'wi wi-day-sunny' if '01d' in icon else 'wi wi-night-clear' if '01n' in icon else 'wi wi-day-cloudy' if '02d' in icon else 'wi wi-night-alt-cloudy' if '02n' in icon else 'wi wi-day-cloudy' if '03d' in icon or '04d' in icon else 'wi wi-night-alt-cloudy' if '03n' in icon or '04n' in icon else 'wi wi-rain' if '09d' in icon or '10d' in icon else 'wi wi-night-alt-rain' if '09n' in icon or '10n' in icon else 'wi wi-thunderstorm' if '11d' in icon or '11n' in icon else 'wi wi-snow' if '13d' in icon or '13n' in icon else 'wi wi-fog' if '50d' in icon or '50n' in icon else 'wi wi-day-sunny' }}"></i>
+                            <i class="wi {{ icon_class }}"></i>
                         </div>
                         <div class="weather-info">
                             <p class="description">{{ description }}</p>
@@ -48,33 +45,35 @@
                             <p class="feels-like">Ощущается как: {{ feels_like }}°C</p>
                             <p class="humidity">Влажность: {{ humidity }}%</p>
                             <p class="wind">Ветер: {{ wind_speed }} м/с</p>
+                            <p class="visibility">Видимость: {{ visibility }} км</p>
+                            <p class="cloudiness">Облачность: {{ cloudiness }}%</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Дополнительная информация -->
                 <div class="extra-info-card">
-                    <h2>Дополнительно</h2>
-                    <div class="extra-info">
-                        <p><i class="wi wi-sunrise"></i> Восход: {{ sunrise }}</p>
-                        <p><i class="wi wi-sunset"></i> Закат: {{ sunset }}</p>
-                        <p><i class="wi wi-barometer"></i> Давление: {{ pressure }} гПа</p>
+                    <h2 class="card-title">Дополнительно</h2>
+                    <div class="extra-info-grid">
+                        <div class="extra-info-item"><i class="wi wi-sunrise"></i> Восход: {{ sunrise }}</div>
+                        <div class="extra-info-item"><i class="wi wi-sunset"></i> Закат: {{ sunset }}</div>
+                        <div class="extra-info-item"><i class="wi wi-barometer"></i> Давление: {{ pressure }} гПа</div>
+                        <div class="extra-info-item"><i class="wi wi-strong-wind"></i> Направление ветра: {{ wind_direction }}</div>
                         {% if aqi %}
-                            <p><i class="wi wi-smoke"></i> Качество воздуха (AQI): {{ aqi }}</p>
+                            <div class="extra-info-item"><i class="wi wi-smoke"></i> Качество воздуха (AQI): {{ aqi }}</div>
                         {% endif %}
+                        <div class="extra-info-item"><i class="wi wi-time-1"></i> Последнее обновление: {{ last_updated }}</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Прогноз на 5 дней -->
             <div class="forecast-card">
-                <h2>Прогноз на 5 дней</h2>
+                <h2 class="card-title">Прогноз на 5 дней</h2>
                 <div class="forecast-grid">
-                    {% for date, temp, feels, icon in forecast %}
+                    {% for date, temp, feels, icon_class in forecast %}
                         <div class="forecast-item">
                             <p class="date">{{ date }}</p>
                             <div class="weather-icon">
-                                <i class="{{ 'wi wi-day-sunny' if '01d' in icon else 'wi wi-night-clear' if '01n' in icon else 'wi wi-day-cloudy' if '02d' in icon else 'wi wi-night-alt-cloudy' if '02n' in icon else 'wi wi-day-cloudy' if '03d' in icon or '04d' in icon else 'wi wi-night-alt-cloudy' if '03n' in icon or '04n' in icon else 'wi wi-rain' if '09d' in icon or '10d' in icon else 'wi wi-night-alt-rain' if '09n' in icon or '10n' in icon else 'wi wi-thunderstorm' if '11d' in icon or '11n' in icon else 'wi wi-snow' if '13d' in icon or '13n' in icon else 'wi wi-fog' if '50d' in icon or '50n' in icon else 'wi wi-day-sunny' }}"></i>
+                                <i class="wi {{ icon_class }}"></i>
                             </div>
                             <p class="temperature">{{ temp }}°C</p>
                             <p class="feels-like">Ощущается: {{ feels }}°C</p>
@@ -83,10 +82,13 @@
                 </div>
             </div>
 
-            <!-- График -->
             <div class="graph-card">
-                <h2>График температуры</h2>
-                <img src="{{ url_for('static', filename='temp_graph.png') }}" alt="График температуры">
+                <h2 class="card-title">График температуры</h2>
+                {% if graph_exists %}
+                    <img src="{{ url_for('static', filename='temp_graph.png') }}?{{ timestamp }}" alt="График температуры" class="graph-image">
+                {% else %}
+                    <p class="error-text">Не удалось сгенерировать график температуры.</p>
+                {% endif %}
             </div>
         {% endif %}
     </div>
@@ -94,56 +96,36 @@
     <script>
         function getLocation() {
             if (!navigator.geolocation) {
-                alert("Геолокация не поддерживается вашим браузером. Используйте ввод города.");
-                console.error("Геолокация не поддерживается браузером");
+                alert("Геолокация не поддерживается вашим браузером.");
                 return;
             }
-
             const options = {
                 timeout: 10000,
                 maximumAge: 0,
                 enableHighAccuracy: true
             };
-
             const successCallback = (position) => {
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
-                console.log("Геолокация успешна: lat =", lat, "lon =", lon);
                 window.location.href = `/?lat=${lat}&lon=${lon}`;
             };
-
             const errorCallback = (error) => {
-                console.log("Геолокация ошибка:", error.code, error.message);
-                let errorMessage;
-                switch (error.code) {
-                    case error.PERMISSION_DENIED:
-                        errorMessage = "Геолокация отклонена пользователем. Используйте ввод города.";
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        errorMessage = "Местоположение недоступно. Проверьте настройки устройства.";
-                        break;
-                    case error.TIMEOUT:
-                        errorMessage = "Время ожидания геолокации истекло. Попробуйте снова.";
-                        break;
-                    default:
-                        errorMessage = "Произошла неизвестная ошибка геолокации.";
-                        break;
-                }
-                console.error("Ошибка геолокации:", error);
-                alert(errorMessage);
+                alert("Ошибка геолокации: " + error.message);
             };
-
             navigator.geolocation.getCurrentPosition(successCallback, errorCallback, options);
         }
 
-        // Обработчик формы
+        function refreshPage() {
+            window.location.reload();
+        }
+
         document.getElementById('city-form').addEventListener('submit', function(event) {
             event.preventDefault();
             const cityInput = document.querySelector('.city-input').value.trim();
             if (cityInput) {
                 this.submit();
             } else {
-                alert("Пожалуйста, введите название города.");
+                alert("Введите город!");
             }
         });
     </script>
