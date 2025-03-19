@@ -29,8 +29,8 @@
                     <button type="submit" class="btn btn-search">Показать</button>
                 </form>
                 <button class="btn btn-geo" onclick="getLocation()">Использовать геолокацию</button>
-                <!-- Баг 6: Неправильный вызов функции refreshPage -->
-                <button class="btn btn-refresh" onclick="refresh()">Обновить</button>
+                <!-- Баг 4: Кнопка "Обновить" меняет текст на "Ошибка" -->
+                <button class="btn btn-refresh" onclick="this.innerText='Ошибка'">Обновить</button>
             </div>
 
             <div class="weather-container">
@@ -38,8 +38,7 @@
                     <h2 class="card-title">Текущая погода</h2>
                     <div class="weather-details">
                         <div class="weather-icon">
-                            <!-- Баг 7: Иконка не отображается из-за неправильного использования -->
-                            <i class="wi-{{ icon_class }}"></i>
+                            <i class="wi {{ icon_class }}"></i>
                         </div>
                         <div class="weather-info">
                             <p class="description">{{ description }}</p>
@@ -84,14 +83,12 @@
                 </div>
             </div>
 
-            <div class="graph-card">
-                <h2 class="card-title">График температуры</h2>
-                {% if graph_exists %}
-                    <img src="{{ url_for('static', filename='temp_graph.png') }}?{{ timestamp }}" alt="График температуры" class="graph-image">
-                {% else %}
-                    <p class="error-text">Не удалось сгенерировать график температуры.</p>
-                {% endif %}
-            </div>
+            {% if graph_exists %}
+                <div class="graph-card">
+                    <h2 class="card-title">График температуры</h2>
+                    <img src="{{ url_for('static', filename='temp_graph.png') }}?t={{ timestamp }}" alt="График температуры">
+                </div>
+            {% endif %}
         {% endif %}
     </div>
 
@@ -115,10 +112,6 @@
                 alert("Ошибка геолокации: " + error.message);
             };
             navigator.geolocation.getCurrentPosition(successCallback, errorCallback, options);
-        }
-
-        function refreshPage() {
-            window.location.reload();
         }
 
         document.getElementById('city-form').addEventListener('submit', function(event) {

@@ -61,7 +61,6 @@ def get_current_weather(lat=None, lon=None, city=None):
     if city:
         url = f"{BASE_URL}weather?q={city}&appid={OPENWEATHER_API_KEY}&units=metric&lang=ru"
     elif lat and lon:
-        # Баг 1: Не проверяем, что lat и lon могут быть None
         url = f"{BASE_URL}weather?lat={lat}&lon={lon}&appid={OPENWEATHER_API_KEY}&units=metric&lang=ru"
     else:
         return None
@@ -69,7 +68,6 @@ def get_current_weather(lat=None, lon=None, city=None):
         response = requests.get(url, timeout=10)
         print(f"Запрос текущей погоды: {url}")
         print(f"Статус запроса текущей погоды: {response.status_code}")
-        # Баг 5: Нет обработки ошибки 429
         if response.status_code == 200:
             return response.json()
         else:
@@ -132,12 +130,10 @@ def generate_temperature_graph(forecast_data):
     avg_temps = []
     for date, temps in daily_temps.items():
         dates.append(date)
-        # Баг 2: Вместо средней температуры берем максимальную
-        avg_temps.append(max(temps))
+        avg_temps.append(sum(temps) / len(temps))
 
     plt.figure(figsize=(12, 5), facecolor='#f0f4f8')
-    # Баг 3: Ошибка в генерации графика — ничего не рисуем
-    # plt.plot(dates, avg_temps, marker='o', linestyle='-', color='#1e90ff', label='Температура', linewidth=2)
+    plt.plot(dates, avg_temps, marker='o', linestyle='-', color='#1e90ff', label='Температура', linewidth=2)
     plt.title('Прогноз температуры на 5 дней', fontsize=16, color='#2c3e50', pad=15)
     plt.xlabel('Дата', fontsize=12, color='#2c3e50')
     plt.ylabel('Температура (°C)', fontsize=12, color='#2c3e50')
@@ -167,7 +163,8 @@ def index():
     lon = request.args.get('lon')
 
     if city:
-        city_name = city.capitalize()
+        # Баг 3: Город отображается с маленькой буквы, если введен с маленькой
+        city_name = city  # Убрали .capitalize(), чтобы сохранить регистр ввода
         current_weather = get_current_weather(city=city)
         forecast = get_forecast(city=city)
     elif lat and lon:
@@ -183,7 +180,8 @@ def index():
         print(f"Ошибка: Не удалось получить данные для города {city if city else 'по координатам'}")
         return render_template('index.html', error="Не удалось получить данные о погоде. Проверьте название города или подключение к интернету.")
 
-    current_temp = current_weather.get('main', {}).get('temp', 0)
+    # Баг 1: Температура всегда 0°C
+    current_temp = 0  # Вместо current_weather.get('main', {}).get('temp', 0)
     feels_like = current_weather.get('main', {}).get('feels_like', 0)
     humidity = current_weather.get('main', {}).get('humidity', 0)
     wind_speed = current_weather.get('wind', {}).get('speed', 0)
@@ -200,8 +198,7 @@ def index():
     lat = current_weather.get('coord', {}).get('lat', 53.6304)
     lon = current_weather.get('coord', {}).get('lon', 55.9308)
     aqi = get_air_quality(lat, lon)
-    # Баг 4: Неправильный формат времени последнего обновления
-    last_updated = datetime.fromtimestamp(current_weather.get('dt', 0), tz).strftime('%Y-%m-%d')
+    last_updated = datetime.fromtimestamp(current_weather.get('dt', 0), tz).strftime('%H:%M, %d %B %Y')
 
     daily_forecast = {}
     for entry in forecast.get('list', [])[:40]:
@@ -216,9 +213,8 @@ def index():
 
     forecast_data = []
     for date, data in list(daily_forecast.items())[:5]:
-        # Баг 2: Используем max вместо среднего значения
-        avg_temp = max(data['temps']) if data['temps'] else 0
-        avg_feels = max(data['feels']) if data['feels'] else 0
+        avg_temp = sum(data['temps']) / len(data['temps']) if data['temps'] else 0
+        avg_feels = sum(data['feels']) / len(data['feels']) if data['feels'] else 0
         icon_counts = {}
         for icon_code in data['icons']:
             icon_counts[icon_code] = icon_counts.get(icon_code, 0) + 1
@@ -226,6 +222,9 @@ def index():
         icon_class = WEATHER_ICON_MAP.get(dominant_icon, "wi-day-cloudy")
         formatted_date = f"{int(date.day)} {MONTHS_RU.get(date.strftime('%B'), date.strftime('%B'))}"
         forecast_data.append((formatted_date, round(avg_temp, 1), round(avg_feels, 1), icon_class))
+
+    # Баг 2: Прогноз на 5 дней показывает только 3 дня
+    forecast_data = forecast_data[:3]
 
     graph_generated = generate_temperature_graph(forecast)
 
