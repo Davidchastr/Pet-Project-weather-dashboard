@@ -160,9 +160,8 @@ body {
     align-items: center;
     gap: 5px;
     padding: 5px 8px;
-    /* Баг 9: Неправильный фон и цвет текста */
     background: #333333; /* Темный фон */
-    color: #333333; /* Темный текст, нечитаемый */
+    color: #ffffff; /* Белый текст */
     border-radius: 8px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     font-size: 14px;
